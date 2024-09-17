@@ -79,7 +79,8 @@ The system allows adding multiple warehouses and products dynamically, ensuring 
 4. **Calculate the Shortest Delivery Path**: Using Dijkstra’s algorithm, the system calculates the shortest path between warehouses and finds the optimal drone for delivery.
 
 5. **Display Delivery Details**: After placing an order, the system displays the details of the delivery, including the warehouse IDs, distance, product availability, and total delivery charge.
-6. ## Sample Output
+
+## Sample Output
 
 The program will output the delivery details for each delivery order, including:
 

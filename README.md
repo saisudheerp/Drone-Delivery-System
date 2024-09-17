@@ -22,7 +22,7 @@ The system efficiently calculates delivery paths between warehouses, determines 
 ## Tech Stack
 
 - **Language**: C++
-- **Algorithms**: Dijkstra’s algorithm for shortest path calculations.
+- **Algorithms**: Dijkstra’s algorithm for shortest path calculations, Breadth First Search(BFS) for nearest warehouse with the product.
 - **Design Concepts**: Object-Oriented Programming (OOP) principles such as inheritance, polymorphism, and encapsulation.
 
 ## Class Structure
@@ -48,8 +48,12 @@ The system efficiently calculates delivery paths between warehouses, determines 
 4. **Dronedeliverysystem**:
    - Manages the entire system: warehouses, products, delivery orders, and drone deliveries.
    - Finds the nearest warehouse with the requested product and processes delivery orders.
+   
+## Code-[main.cpp](https://github.com/saisudheerp/Drone-Delivery-System/blob/main/main.cpp)
+
 
 ## Code Explanation
+
 
 ### Key Parts of the Code
 
@@ -75,6 +79,29 @@ The system allows adding multiple warehouses and products dynamically, ensuring 
 4. **Calculate the Shortest Delivery Path**: Using Dijkstra’s algorithm, the system calculates the shortest path between warehouses and finds the optimal drone for delivery.
 
 5. **Display Delivery Details**: After placing an order, the system displays the details of the delivery, including the warehouse IDs, distance, product availability, and total delivery charge.
+6. ## Sample Output
+
+The program will output the delivery details for each delivery order, including:
+
+- Source warehouse
+- Destination warehouse
+- Product being delivered
+- Whether the product is available
+- Delivery distance
+- Delivery charge
+
+Example:
+
+```yaml
+Delivery Details:
+Source Warehouse: 1
+Destination Warehouse: 2
+Product: Product A
+Product Available: Yes
+Distance: 5 units
+Delivery Charge: $10
+```
+
 
 ## Future Improvements
 

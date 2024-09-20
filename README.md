@@ -6,7 +6,7 @@ This **Drone Delivery System** simulates a network of warehouses that deliver pr
 
 - **Short-Distance Drones** (less range, cheaper cost)
 - **Long-Distance Drones** (greater range, higher cost)
-- <p align="center">
+<p align="center">
   <img src="drone.jpg" alt="Drone Delivery System" width="400"/>
 </p>
 The system efficiently calculates delivery paths between warehouses, determines whether a product is available, and computes the delivery charges based on distance and drone type using Dijkstra's algorithm for shortest path calculation.

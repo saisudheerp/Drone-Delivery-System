@@ -1,13 +1,16 @@
 #include <iostream>
 #include <limits>
 #include <queue>
+#include <vector>
+#include <stdexcept>
+#include <string>
 
 using namespace std;
 
 const int MAX_WAREHOUSES = 100;
 const int MAX_PRODUCTS = 100;
 
-
+// Drone class hierarchy
 class Drone {
 protected:
     int batterycapacity;
@@ -19,7 +22,6 @@ public:
     virtual int getdeliverycharge(int distance) const = 0;
 };
 
-
 class Shortdistancedrone : public Drone {
 public:
     Shortdistancedrone(int batterycapacity) : Drone(batterycapacity) {}
@@ -29,11 +31,10 @@ public:
     }
 
     int getdeliverycharge(int distance) const override {
-        return distance * 2;  
+        return distance * 2;
     }
 };
 
-// Long Distance Drone derived from base Drone class
 class Longdistancedrone : public Drone {
 public:
     Longdistancedrone(int batterycapacity) : Drone(batterycapacity) {}
@@ -43,11 +44,11 @@ public:
     }
 
     int getdeliverycharge(int distance) const override {
-        return distance * 3;  
+        return distance * 3;
     }
 };
 
-
+// Warehouse class
 class Warehouse {
 public:
     int id;
@@ -56,13 +57,13 @@ public:
     int numneighbors;
     string products[MAX_PRODUCTS];
     int numProducts;
-    Shortdistancedrone Shortdistancedrone;
-    Longdistancedrone Longdistancedrone;
+    Shortdistancedrone shortdistancedrone;
+    Longdistancedrone longdistancedrone;
 
     Warehouse(int id, int shortDistanceBattery, int longDistanceBattery)
         : id(id), numneighbors(0), numProducts(0),
-          Shortdistancedrone(shortDistanceBattery),
-          Longdistancedrone(longDistanceBattery) {}
+          shortdistancedrone(shortDistanceBattery),
+          longdistancedrone(longDistanceBattery) {}
 
     void addneighbor(Warehouse* neighbor, int distance) {
         if (numneighbors >= MAX_WAREHOUSES) {
@@ -93,52 +94,61 @@ public:
     }
 
     bool candeliverwithdrones(int distance) const {
-        return Shortdistancedrone.cancompletedelivery(distance) || Longdistancedrone.cancompletedelivery(distance);
+        return shortdistancedrone.cancompletedelivery(distance) || longdistancedrone.cancompletedelivery(distance);
     }
 
     int calculatedeliverycharge(int distance) const {
-        if (Shortdistancedrone.cancompletedelivery(distance)) {
-            return Shortdistancedrone.getdeliverycharge(distance);
-        } else if (Longdistancedrone.cancompletedelivery(distance)) {
-            return Longdistancedrone.getdeliverycharge(distance);
+        if (shortdistancedrone.cancompletedelivery(distance)) {
+            return shortdistancedrone.getdeliverycharge(distance);
+        } else if (longdistancedrone.cancompletedelivery(distance)) {
+            return longdistancedrone.getdeliverycharge(distance);
         } else {
             throw runtime_error("No drone can complete the delivery to the required warehouse.");
         }
     }
 
+    // Dijkstra's algorithm to calculate the shortest distance between warehouses
+    int dijkstraCalculatedistance(Warehouse* destinationwarehouse) const {
+        vector<int> minDistance(MAX_WAREHOUSES, numeric_limits<int>::max());
+        minDistance[id - 1] = 0;  // Set the distance to this warehouse as 0
 
-    int dfscalculatedistance(Warehouse* destinationwarehouse, bool visited[], int accumulatedDistance) const {
+        priority_queue<pair<int, Warehouse*>, vector<pair<int, Warehouse*>>, greater<pair<int, Warehouse*>>> pq;
+        pq.push({0, const_cast<Warehouse*>(this)});  // Start from the current warehouse
 
-        visited[id - 1] = true;
+        while (!pq.empty()) {
+            int currentDistance = pq.top().first;
+            Warehouse* currentWarehouse = pq.top().second;
+            pq.pop();
 
+            // If the current warehouse is the destination, return the accumulated distance
+            if (currentWarehouse == destinationwarehouse) {
+                return currentDistance;
+            }
 
-        if (this == destinationwarehouse) {
-            return accumulatedDistance;
-        }
+            // Process neighbors
+            for (int i = 0; i < currentWarehouse->numneighbors; ++i) {
+                Warehouse* neighbor = currentWarehouse->neighbors[i];
+                int distanceToNeighbor = currentWarehouse->distances[i];
+                int newDistance = currentDistance + distanceToNeighbor;
 
-        int mindistance = numeric_limits<int>::max();
-
-
-        for (int i = 0; i < numneighbors; ++i) {
-            Warehouse* neighbor = neighbors[i];
-            if (!visited[neighbor->id - 1]) {
-                int distanceToNeighbor = distances[i];
-                int distanceToDestination = neighbor->dfscalculatedistance(destinationwarehouse, visited, accumulatedDistance + distanceToNeighbor);
-                mindistance = min(mindistance, distanceToDestination);
+                // If a shorter path to the neighbor is found, update it
+                if (newDistance < minDistance[neighbor->id - 1]) {
+                    minDistance[neighbor->id - 1] = newDistance;
+                    pq.push({newDistance, neighbor});
+                }
             }
         }
 
-        return mindistance;
+        // Return a large value if the destination is not reachable
+        return numeric_limits<int>::max();
     }
 
-
     int calculatedistance(Warehouse* destinationwarehouse) const {
-        bool visited[MAX_WAREHOUSES] = {false};
-        return dfscalculatedistance(destinationwarehouse, visited, 0);
+        return dijkstraCalculatedistance(destinationwarehouse);
     }
 };
 
-
+// DeliveryOrder class
 class DeliveryOrder {
 public:
     Warehouse* sourcewarehouse;
@@ -155,7 +165,7 @@ public:
           productAvailable(false),
           distance(0),
           deliveryCharge(0) {
-        
+
         distance = sourcewarehouse->calculatedistance(destinationwarehouse);
     }
 
@@ -182,7 +192,7 @@ public:
     }
 };
 
-
+// DroneDeliverySystem class
 class Dronedeliverysystem {
 private:
     Warehouse* warehouses[MAX_WAREHOUSES];
@@ -190,9 +200,8 @@ private:
     DeliveryOrder* deliveryOrders[MAX_WAREHOUSES];
     int numdeliveryorders;
 
-
     Warehouse* findNearestWarehouseWithProduct(const string& product) {
-        bool visited[MAX_WAREHOUSES] = {false};
+        vector<bool> visited(MAX_WAREHOUSES, false);
         queue<Warehouse*> q;
         for (int i = 0; i < numWarehouses; ++i) {
             q.push(warehouses[i]);
@@ -246,7 +255,6 @@ public:
             throw runtime_error("Maximum number of delivery orders reached.");
         }
 
-
         Warehouse* sourcewarehouse = findNearestWarehouseWithProduct(product);
 
         if (sourcewarehouse != nullptr) {
@@ -279,24 +287,21 @@ public:
     }
 };
 
+// Main function
 int main() {
     try {
-
         Dronedeliverysystem deliverySystem;
-
 
         Warehouse* warehouse1 = deliverySystem.createwarehouse(1, 5, 10);
         Warehouse* warehouse2 = deliverySystem.createwarehouse(2, 8, 15);
         Warehouse* warehouse3 = deliverySystem.createwarehouse(3, 12, 20);
         Warehouse* warehouse4 = deliverySystem.createwarehouse(4, 6, 10);
 
-
         deliverySystem.addwarehouseneighbor(warehouse1, warehouse2, 5);
         deliverySystem.addwarehouseneighbor(warehouse1, warehouse3, 10);
         deliverySystem.addwarehouseneighbor(warehouse2, warehouse3, 3);
         deliverySystem.addwarehouseneighbor(warehouse2, warehouse4, 2);
         deliverySystem.addwarehouseneighbor(warehouse3, warehouse4, 6);
-
 
         deliverySystem.addwarehouseproduct(warehouse1, "Product A");
         deliverySystem.addwarehouseproduct(warehouse1, "Product B");
@@ -305,11 +310,9 @@ int main() {
         deliverySystem.addwarehouseproduct(warehouse4, "Product A");
         deliverySystem.addwarehouseproduct(warehouse4, "Product C");
 
-
         deliverySystem.createdeliveryorder(warehouse2, "Product A");
         deliverySystem.createdeliveryorder(warehouse3, "Product B");
         deliverySystem.createdeliveryorder(warehouse4, "Product C");
-
 
         deliverySystem.processdeliveries();
     } catch (const exception& ex) {

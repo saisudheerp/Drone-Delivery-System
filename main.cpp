@@ -82,7 +82,7 @@ public:
         else throw runtime_error("No drone can complete delivery.");
     }
 
-    // Dijkstra for shortest distance
+    // Optimized Dijkstra for shortest distance
     int dijkstraCalculatedistance(Warehouse* destinationwarehouse) const {
         vector<int> minDistance(MAX_WAREHOUSES, numeric_limits<int>::max());
         minDistance[id - 1] = 0;
@@ -94,6 +94,9 @@ public:
             int currentDistance = pq.top().first;
             Warehouse* currentWarehouse = pq.top().second;
             pq.pop();
+
+            // ✅ Optimization: skip if this is an outdated entry
+            if (currentDistance > minDistance[currentWarehouse->id - 1]) continue;
 
             if (currentWarehouse == destinationwarehouse) return currentDistance;
 
@@ -108,7 +111,7 @@ public:
                 }
             }
         }
-        return numeric_limits<int>::max();
+        return numeric_limits<int>::max(); // unreachable
     }
 };
 
@@ -198,13 +201,13 @@ public:
         Warehouse* sourcewarehouse = result.first;
         int distance = result.second;
 
-        if (sourcewarehouse != nullptr) {
+        if (sourcewarehouse != nullptr && distance != numeric_limits<int>::max()) {
             DeliveryOrder* deliveryOrder = new DeliveryOrder(sourcewarehouse, destinationwarehouse, product, distance);
             deliveryOrder->checkProductAvailability();
             deliveryOrder->calculatedeliverycharge();
             deliveryOrders[numdeliveryorders++] = deliveryOrder;
         } else {
-            cout << "Product '" << product << "' not available in any warehouse. Skipping delivery." << endl;
+            cout << "Product '" << product << "' not available or destination unreachable. Skipping delivery." << endl;
         }
     }
 
@@ -231,12 +234,23 @@ int main() {
         Warehouse* warehouse3 = deliverySystem.createwarehouse(3, 12, 20);
         Warehouse* warehouse4 = deliverySystem.createwarehouse(4, 6, 10);
 
+        // Add bidirectional edges
         deliverySystem.addwarehouseneighbor(warehouse1, warehouse2, 5);
-        deliverySystem.addwarehouseneighbor(warehouse1, warehouse3, 10);
-        deliverySystem.addwarehouseneighbor(warehouse2, warehouse3, 3);
-        deliverySystem.addwarehouseneighbor(warehouse2, warehouse4, 2);
-        deliverySystem.addwarehouseneighbor(warehouse3, warehouse4, 6);
+        deliverySystem.addwarehouseneighbor(warehouse2, warehouse1, 5);
 
+        deliverySystem.addwarehouseneighbor(warehouse1, warehouse3, 10);
+        deliverySystem.addwarehouseneighbor(warehouse3, warehouse1, 10);
+
+        deliverySystem.addwarehouseneighbor(warehouse2, warehouse3, 3);
+        deliverySystem.addwarehouseneighbor(warehouse3, warehouse2, 3);
+
+        deliverySystem.addwarehouseneighbor(warehouse2, warehouse4, 2);
+        deliverySystem.addwarehouseneighbor(warehouse4, warehouse2, 2);
+
+        deliverySystem.addwarehouseneighbor(warehouse3, warehouse4, 6);
+        deliverySystem.addwarehouseneighbor(warehouse4, warehouse3, 6);
+
+        // Add products
         deliverySystem.addwarehouseproduct(warehouse1, "Product A");
         deliverySystem.addwarehouseproduct(warehouse1, "Product B");
         deliverySystem.addwarehouseproduct(warehouse2, "Product B");
@@ -244,10 +258,12 @@ int main() {
         deliverySystem.addwarehouseproduct(warehouse4, "Product A");
         deliverySystem.addwarehouseproduct(warehouse4, "Product C");
 
+        // Create delivery orders
         deliverySystem.createdeliveryorder(warehouse2, "Product A");
         deliverySystem.createdeliveryorder(warehouse3, "Product B");
         deliverySystem.createdeliveryorder(warehouse4, "Product C");
 
+        // Process deliveries
         deliverySystem.processdeliveries();
     }
     catch (const exception& ex) {
